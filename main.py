@@ -97,12 +97,14 @@ def register_login():
 def main():
 
     st.set_page_config(
-        page_title="Relai", page_icon=":partner_exchange:", layout="wide"
+        page_title="Relait", page_icon=":partner_exchange:", layout="wide"
     )
     init_connection()
 
     if "reset_password" in st.query_params:
         fragment = get_fragment()
+        print("umar" + str(fragment))
+        print("javed" + str(fragment.split("access_token=")))
         acces_token = (fragment.split("access_token=")[1]).split("&")[0]
         payload = jwt.decode(acces_token, options={"verify_signature": False})
         reset_password(payload["email"], payload["sub"])
