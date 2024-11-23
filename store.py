@@ -16,8 +16,8 @@ class DBClient:
             user_id, {"password": password}
         ).user
 
-    def invite_user_by_email(self, email: str, first_name: str, last_name: str) -> None:
-        self.client.auth.admin.invite_user_by_email(
+    def invite_user_by_email(self, email: str, first_name: str, last_name: str):
+        return self.client.auth.admin.invite_user_by_email(
             email,
             options={
                 "data": {
@@ -25,24 +25,21 @@ class DBClient:
                     "last_name": last_name,
                 }
             },
-        )
+        ).user
 
-    def insert_num_questions(self, recording_id: str, json: dict) -> None:
-        self.client.table("recording_stats").insert(
-            {"recording_id": recording_id, "num_questions": json}
+    def insert_partner(self, user_id: str, partner_id: str | None = None) -> None:
+        self.client.table("partner").insert(
+            {"id": user_id, "partner_id": partner_id}
         ).execute()
 
-    def get_num_questions(self, recording_id: str) -> dict | None:
-        recording_stats = (
+    def get_partner_id(self, user_id: str) -> str | None:
+        partner_id = (
             self.client.table("recording_stats")
-            .select("num_questions")
-            .eq("recording_id", recording_id)
-            .maybe_single()
+            .select("partner_id")
+            .eq("id", user_id)
             .execute()
         )
-        if recording_stats:
-            return recording_stats.data["num_questions"]
-        return None
+        return partner_id
 
     def get_mode_analysis(self, recording_id: str, interval: int) -> dict | None:
         mode_analysis = (

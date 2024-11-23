@@ -36,12 +36,14 @@ def login_submit(is_login: bool):
         ):
             st.error("Please provide all requested information")
             return
-        st.session_state.db_client.invite_user_by_email(
+        user = st.session_state.db_client.invite_user_by_email(
             st.session_state.register_email,
             st.session_state.register_first_name,
             st.session_state.register_last_name,
         )
         st.info("An email invite has been sent to your email")
+        # add an entry in the partner table
+        st.session_state.db_client.insert_partner(user_id=user.id)
     except AuthApiError as e:
         st.error(e)
 
@@ -101,13 +103,15 @@ def main():
     )
     init_connection()
 
-    if "reset_password" in st.query_params:
+    if st.session_state.get("authenticated"):
+        partner_id = st.session_state.db_client.get_partner_id(st.session_state.user.id)
+        print(partner_id)
+    elif "reset_password" in st.query_params:
         fragment = get_fragment()
-        print("umar" + str(fragment))
-        print("javed" + str(fragment.split("access_token=")))
-        acces_token = (fragment.split("access_token=")[1]).split("&")[0]
-        payload = jwt.decode(acces_token, options={"verify_signature": False})
-        reset_password(payload["email"], payload["sub"])
+        if fragment:
+            acces_token = (fragment.split("access_token=")[1]).split("&")[0]
+            payload = jwt.decode(acces_token, options={"verify_signature": False})
+            reset_password(payload["email"], payload["sub"])
     else:
         register_login()
 
