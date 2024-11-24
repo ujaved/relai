@@ -35,15 +35,26 @@ class DBClient:
             {"id": user_id, "partner_id": partner_id}
         ).execute()
 
-    def get_partner_id(self, user_id: str) -> str | None:
-        return (
+    def get_partner(self, user_id: str) -> dict | None:
+        by_user_id = (
             self.client.table("partner")
-            .select("partner_id")
+            .select("*")
             .eq("id", user_id)
-            .limit(1)
-            .single()
+            .maybe_single()
             .execute()
-        ).data["partner_id"]
+        )
+        if by_user_id:
+            return by_user_id.data
+        by_partner_id = (
+            self.client.table("partner")
+            .select("*")
+            .eq("partner_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        if by_partner_id:
+            return by_partner_id.data
+        return None
 
     def get_mode_analysis(self, recording_id: str, interval: int) -> dict | None:
         mode_analysis = (
