@@ -14,7 +14,7 @@ def init_connection() -> None:
         )
 
 
-def login_submit(is_login: bool):
+def login_submit(is_login: bool, invite_partner: bool = False):
     if is_login:
         if not st.session_state.login_email or not st.session_state.login_password:
             st.error("Please provide login information")
@@ -41,9 +41,13 @@ def login_submit(is_login: bool):
             st.session_state.register_first_name,
             st.session_state.register_last_name,
         )
-        st.info("An email invite has been sent to your email")
-        # add an entry in the partner table
-        st.session_state.db_client.insert_partner(user_id=user.id)
+        st.info(f"An email invite has been sent to {st.session_state.register_email}")
+        if invite_partner:
+            st.session_state.db_client.upsert_partner(
+                user_id=st.session_state.user.id, partner_id=user.id
+            )
+        else:
+            st.session_state.db_client.upsert_partner(user_id=user.id)
     except AuthApiError as e:
         st.error(e)
 
@@ -105,7 +109,24 @@ def main():
 
     if st.session_state.get("authenticated"):
         partner_id = st.session_state.db_client.get_partner_id(st.session_state.user.id)
-        print(partner_id)
+        if not partner_id:
+            st.info(
+                "You haven't invited your partner yet. Please invite your partner by submitting their information."
+            )
+            with st.form("register", clear_on_submit=True):
+                st.text_input("Email", key="register_email")
+                st.text_input("First name", key="register_first_name")
+                st.text_input("Last name", key="register_last_name")
+                st.form_submit_button(
+                    "Submit", on_click=login_submit, args=(False, True)
+                )
+        else:
+            partner = st.session_state.db_client.get_user(partner_id)
+            if not partner.confirmed_at:
+                st.error(
+                    "Your partner has not yet appected the invitation to sign up. Send them a reminder?"
+                )
+
     elif "reset_password" in st.query_params:
         fragment = get_fragment()
         if fragment:

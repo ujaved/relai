@@ -11,6 +11,9 @@ class DBClient:
             {"email": email, "password": password}
         ).user
 
+    def get_user(self, user_id: str):
+        return self.client.auth.admin.get_user_by_id(user_id).user
+
     def update_user_password(self, user_id: str, password: str):
         return self.client.auth.admin.update_user_by_id(
             user_id, {"password": password}
@@ -27,19 +30,20 @@ class DBClient:
             },
         ).user
 
-    def insert_partner(self, user_id: str, partner_id: str | None = None) -> None:
-        self.client.table("partner").insert(
+    def upsert_partner(self, user_id: str, partner_id: str | None = None) -> None:
+        self.client.table("partner").upsert(
             {"id": user_id, "partner_id": partner_id}
         ).execute()
 
     def get_partner_id(self, user_id: str) -> str | None:
-        partner_id = (
-            self.client.table("recording_stats")
+        return (
+            self.client.table("partner")
             .select("partner_id")
             .eq("id", user_id)
+            .limit(1)
+            .single()
             .execute()
-        )
-        return partner_id
+        ).data["partner_id"]
 
     def get_mode_analysis(self, recording_id: str, interval: int) -> dict | None:
         mode_analysis = (
