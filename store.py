@@ -1,5 +1,4 @@
 from supabase import create_client, Client
-from datetime import date
 
 
 class DBClient:
@@ -30,23 +29,23 @@ class DBClient:
             },
         ).user
 
-    def upsert_partner(self, user_id: str, partner_id: str | None = None) -> None:
-        self.client.table("partner").upsert(
-            {"id": user_id, "partner_id": partner_id}
+    def insert_couple(self, user_id: str, partner_id: str | None = None) -> None:
+        self.client.table("couple").insert(
+            {"user_id": user_id, "partner_id": partner_id}
         ).execute()
 
-    def get_partner(self, user_id: str) -> dict | None:
+    def get_couple(self, user_id: str) -> dict | None:
         by_user_id = (
-            self.client.table("partner")
+            self.client.table("couple")
             .select("*")
-            .eq("id", user_id)
+            .eq("user_id", user_id)
             .maybe_single()
             .execute()
         )
         if by_user_id:
             return by_user_id.data
         by_partner_id = (
-            self.client.table("partner")
+            self.client.table("couple")
             .select("*")
             .eq("partner_id", user_id)
             .maybe_single()
@@ -56,27 +55,23 @@ class DBClient:
             return by_partner_id.data
         return None
 
-    def get_mode_analysis(self, recording_id: str, interval: int) -> dict | None:
+    def get_mode_analysis(self, recording_id: str) -> dict | None:
         mode_analysis = (
             self.client.table("mode_analysis")
-            .select("mode_analysis")
+            .select("*")
             .eq("recording_id", recording_id)
-            .eq("interval", interval)
             .maybe_single()
             .execute()
         )
         if mode_analysis:
-            return mode_analysis.data["mode_analysis"]
+            return mode_analysis.data["modes"]
         return None
 
-    def insert_mode_analysis(
-        self, recording_id: str, interval: int, json: dict
-    ) -> None:
+    def insert_mode_analysis(self, recording_id: str, json: dict) -> None:
         self.client.table("mode_analysis").insert(
             {
                 "recording_id": recording_id,
-                "interval": interval,
-                "mode_analysis": json,
+                "modes": json,
             }
         ).execute()
 
@@ -104,21 +99,11 @@ class DBClient:
             }
         ).execute()
 
-    def get_recording_stats(self, recordind_ids: list[str]) -> list[dict]:
+    def get_recordings(self, couple_id: str) -> list[dict]:
         return (
-            self.client.table("recording_stats")
+            self.client.table("recording")
             .select("*")
-            .in_("recording_id", recordind_ids)
-            .execute()
-            .data
-        )
-
-    def get_recordings(self, teacher_id: str, class_id: str) -> list[dict]:
-        return (
-            self.client.table("recordings")
-            .select("*")
-            .eq("user_id", teacher_id)
-            .eq("class_id", class_id)
+            .eq("couple_id", couple_id)
             .execute()
             .data
         )
@@ -141,55 +126,10 @@ class DBClient:
             .data
         )
 
-    def insert_speaker(
-        self,
-        class_id: str,
-        name: str,
-        image_s3_key: str | None = None,
-        alt_names: list[str] | None = None,
-    ) -> None:
-        self.client.table("speakers").insert(
+    def insert_recording(self, couple_id: str, transcript: str) -> None:
+        self.client.table("recording").insert(
             {
-                "class_id": class_id,
-                "name": name,
-                "s3_key": image_s3_key,
-                "alt_names": alt_names,
-            }
-        ).execute()
-
-    def update_speaker(
-        self,
-        class_id: str,
-        name: str,
-        alt_names: list[str],
-    ) -> None:
-        self.client.table("speakers").update({"alt_names": alt_names}).eq(
-            "class_id", class_id
-        ).eq("name", name).execute()
-
-    def get_orgs(self) -> dict:
-        return self.client.table("organizations").select("*").execute().data
-
-    def insert_org(self, name: str) -> None:
-        self.client.table("organizations").insert({"name": name}).execute()
-
-    def insert_recording(
-        self, user_id: str, link: str, date: date, class_id: str
-    ) -> None:
-        self.client.table("recordings").insert(
-            {
-                "user_id": user_id,
-                "link": link,
-                "date": date.isoformat(),
-                "class_id": class_id,
-            }
-        ).execute()
-
-    def insert_class(self, name: str, teacher_id: str, org_id: str) -> None:
-        self.client.table("classes").insert(
-            {
-                "name": name,
-                "teacher_id": teacher_id,
-                "org_id": org_id,
+                "couple_id": couple_id,
+                "transcript": transcript,
             }
         ).execute()

@@ -20,6 +20,9 @@ streamlit_option_menu = "*"
 statsmodels = "*"
 pyjwt = "*"
 boto3 = "*"
+imageio-ffmpeg = "*"
+streamlit-audiorecorder="*"
+assemblyai = "*"
 
 [dev-packages]
 
