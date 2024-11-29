@@ -153,12 +153,10 @@ def process_vtt(transcript_vtt: str, utterances: list) -> str:
 
 
 def create_recording():
-    st.subheader("Record a conversation")
-    audio = audiorecorder("", "")
-    if len(audio) > 0:
-        # audio.export("audio.wav", format="wav")
-        # st.audio(audio.export().read())
-        transcript = st.session_state.transcriber.transcribe(audio.export().read())
+    audio = st.audio_input("Record a conversation")
+    if audio:
+        with st.spinner("Transcribing audio"):
+            transcript = st.session_state.transcriber.transcribe(audio)
         vtt = process_vtt(transcript.export_subtitles_vtt(), transcript.utterances)
         st.session_state.db_client.insert_recording(
             couple_id=st.session_state.couple_id,
